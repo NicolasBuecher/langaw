@@ -5,6 +5,8 @@ class Fly {
   final LangawGame game;
   Rect flyRect;
   Paint flyPaint;
+  bool isDead = false;
+  bool isOffscreen = false;
 
   Fly(this.game, double x, double y) {
     flyRect = Rect.fromLTWH(x, y, game.tileSize, game.tileSize);
@@ -16,9 +18,18 @@ class Fly {
     c.drawRect(flyRect, flyPaint);
   }
 
-  void update(double t) {}
+  void update(double t) {
+    if (isDead) {
+      flyRect = flyRect.translate(0, game.tileSize * 4 * t);
+      if (flyRect.top > game.screenSize.height) {
+        isOffscreen = true;
+      }
+    }
+  }
 
   void onTapDown() {
+    isDead = true;
     flyPaint.color = Color(0xffff4757);
+    game.spawnFly();
   }
 }
