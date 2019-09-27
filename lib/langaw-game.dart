@@ -10,6 +10,10 @@ import 'package:langaw/components/drooler-fly.dart';
 import 'package:langaw/components/house-fly.dart';
 import 'package:langaw/components/hungry-fly.dart';
 import 'package:langaw/components/macho-fly.dart';
+import 'package:langaw/components/start-button.dart';
+import 'package:langaw/view.dart';
+import 'package:langaw/views/home-view.dart';
+import 'package:langaw/views/lost-view.dart';
 
 class LangawGame extends Game {
   Size screenSize;
@@ -17,6 +21,10 @@ class LangawGame extends Game {
   Backyard background;
   List<Fly> flies;
   Random rnd;
+  View activeView = View.home;
+  HomeView homeView;
+  LostView lostView;
+  StartButton startButton;
 
   LangawGame() {
     initialize();
@@ -28,6 +36,9 @@ class LangawGame extends Game {
     resize(await Flame.util.initialDimensions());
 
     background = Backyard(this);
+    homeView = HomeView(this);
+    lostView = LostView(this);
+    startButton = StartButton(this);
     spawnFly();
   }
 
@@ -58,6 +69,16 @@ class LangawGame extends Game {
     background.render(canvas);
 
     flies.forEach((Fly fly) => fly.render(canvas));
+
+    if (activeView == View.home) {
+      homeView.render(canvas);
+      startButton.render(canvas);
+    }
+
+    if (activeView == View.lost) {
+      lostView.render(canvas);
+      startButton.render(canvas);
+    }
   }
 
   void update(double t) {
@@ -71,10 +92,29 @@ class LangawGame extends Game {
   }
 
   void onTapDown(TapDownDetails d) {
-    flies.forEach((Fly fly) {
-      if (fly.flyRect.contains(d.globalPosition)) {
-        fly.onTapDown();
+    bool isHandled = false;
+
+    if (!isHandled && startButton.rect.contains(d.globalPosition)) {
+      if (activeView == View.home || activeView == View.lost) {
+        startButton.onTapDown();
+        isHandled = true;
       }
-    });
+    }
+
+    if (!isHandled) {
+      bool didHitAFly = false;
+
+      flies.forEach((Fly fly) {
+        if (fly.flyRect.contains(d.globalPosition)) {
+          fly.onTapDown();
+          isHandled = true;
+          didHitAFly = true;
+        }
+      });
+
+      if (activeView == View.playing && !didHitAFly) {
+        activeView = View.lost;
+      }
+    }
   }
 }
