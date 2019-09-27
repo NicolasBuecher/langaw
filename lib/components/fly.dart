@@ -11,9 +11,7 @@ class Fly {
   bool isDead = false;
   bool isOffscreen = false;
 
-  Fly(this.game, double x, double y) {
-    flyRect = Rect.fromLTWH(x, y, game.tileSize, game.tileSize);
-  }
+  Fly(this.game);
 
   void render(Canvas c) {
     if (isDead) {
@@ -28,6 +26,11 @@ class Fly {
       flyRect = flyRect.translate(0, game.tileSize * 4 * t);
       if (flyRect.top > game.screenSize.height) {
         isOffscreen = true;
+      }
+    } else {
+      flyingSpriteIndex += 30 * t;
+      if (flyingSpriteIndex >= 2) {
+        flyingSpriteIndex -= 2;
       }
     }
   }
