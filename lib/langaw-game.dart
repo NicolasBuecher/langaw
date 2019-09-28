@@ -3,43 +3,61 @@ import 'dart:ui';
 import 'package:flame/flame.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/gestures.dart';
-import 'package:langaw/components/backyard.dart';
-import 'package:langaw/components/fly.dart';
 import 'package:langaw/components/agile-fly.dart';
+import 'package:langaw/components/backyard.dart';
+import 'package:langaw/components/credits-button.dart';
 import 'package:langaw/components/drooler-fly.dart';
+import 'package:langaw/components/fly.dart';
+import 'package:langaw/components/help-button.dart';
 import 'package:langaw/components/house-fly.dart';
 import 'package:langaw/components/hungry-fly.dart';
 import 'package:langaw/components/macho-fly.dart';
 import 'package:langaw/components/start-button.dart';
+import 'package:langaw/controllers/spawner.dart';
 import 'package:langaw/view.dart';
+import 'package:langaw/views/credits-view.dart';
+import 'package:langaw/views/help-view.dart';
 import 'package:langaw/views/home-view.dart';
 import 'package:langaw/views/lost-view.dart';
 
 class LangawGame extends Game {
   Size screenSize;
   double tileSize;
+  Random rnd;
+
   Backyard background;
   List<Fly> flies;
-  Random rnd;
+  StartButton startButton;
+  HelpButton helpButton;
+  CreditsButton creditsButton;
+
+  FlySpawner spawner;
+
   View activeView = View.home;
   HomeView homeView;
   LostView lostView;
-  StartButton startButton;
+  HelpView helpView;
+  CreditsView creditsView;
 
   LangawGame() {
     initialize();
   }
 
   void initialize() async {
-    flies = List<Fly>();
     rnd = Random();
+    flies = List<Fly>();
     resize(await Flame.util.initialDimensions());
 
     background = Backyard(this);
+    startButton = StartButton(this);
+    helpButton = HelpButton(this);
+    creditsButton = CreditsButton(this);
+
+    spawner = FlySpawner(this);
     homeView = HomeView(this);
     lostView = LostView(this);
-    startButton = StartButton(this);
-    spawnFly();
+    helpView = HelpView(this);
+    creditsView = CreditsView(this);
   }
 
   void spawnFly() {
@@ -70,18 +88,19 @@ class LangawGame extends Game {
 
     flies.forEach((Fly fly) => fly.render(canvas));
 
-    if (activeView == View.home) {
-      homeView.render(canvas);
+    if (activeView == View.home) homeView.render(canvas);
+    if (activeView == View.lost) lostView.render(canvas);
+    if (activeView == View.home || activeView == View.lost) {
       startButton.render(canvas);
+      helpButton.render(canvas);
+      creditsButton.render(canvas);
     }
-
-    if (activeView == View.lost) {
-      lostView.render(canvas);
-      startButton.render(canvas);
-    }
+    if (activeView == View.help) helpView.render(canvas);
+    if (activeView == View.credits) creditsView.render(canvas);
   }
 
   void update(double t) {
+    spawner.update(t);
     flies.forEach((Fly fly) => fly.update(t));
     flies.removeWhere((Fly fly) => fly.isOffscreen);
   }
@@ -94,6 +113,31 @@ class LangawGame extends Game {
   void onTapDown(TapDownDetails d) {
     bool isHandled = false;
 
+    // dialog boxes
+    if (!isHandled) {
+      if (activeView == View.help || activeView == View.credits) {
+        activeView = View.home;
+        isHandled = true;
+      }
+    }
+
+    // help button
+    if (!isHandled && helpButton.rect.contains(d.globalPosition)) {
+      if (activeView == View.home || activeView == View.lost) {
+        helpButton.onTapDown();
+        isHandled = true;
+      }
+    }
+
+    // credits button
+    if (!isHandled && creditsButton.rect.contains(d.globalPosition)) {
+      if (activeView == View.home || activeView == View.lost) {
+        creditsButton.onTapDown();
+        isHandled = true;
+      }
+    }
+
+    // start button
     if (!isHandled && startButton.rect.contains(d.globalPosition)) {
       if (activeView == View.home || activeView == View.lost) {
         startButton.onTapDown();
@@ -101,9 +145,9 @@ class LangawGame extends Game {
       }
     }
 
+    // flies
     if (!isHandled) {
       bool didHitAFly = false;
-
       flies.forEach((Fly fly) {
         if (fly.flyRect.contains(d.globalPosition)) {
           fly.onTapDown();
@@ -111,7 +155,6 @@ class LangawGame extends Game {
           didHitAFly = true;
         }
       });
-
       if (activeView == View.playing && !didHitAFly) {
         activeView = View.lost;
       }
