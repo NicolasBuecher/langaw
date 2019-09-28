@@ -41,7 +41,7 @@ class Fly {
     } else {
       flyingSpriteIndex += 30 * t;
       if (flyingSpriteIndex >= 2) {
-        flyingSpriteIndex -= 2;
+        flyingSpriteIndex = 0;
       }
 
       double stepDistance = speed * t;
