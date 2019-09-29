@@ -32,6 +32,7 @@ void main() async {
     'flies/macho-fly-dead.png',
     'bg/lose-splash.png',
     'branding/title.png',
+    'ui/callout.png',
     'ui/dialog-credits.png',
     'ui/dialog-help.png',
     'ui/icon-credits.png',
