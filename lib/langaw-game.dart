@@ -9,9 +9,11 @@ import 'package:langaw/components/credits-button.dart';
 import 'package:langaw/components/drooler-fly.dart';
 import 'package:langaw/components/fly.dart';
 import 'package:langaw/components/help-button.dart';
+import 'package:langaw/components/highscore-display.dart';
 import 'package:langaw/components/house-fly.dart';
 import 'package:langaw/components/hungry-fly.dart';
 import 'package:langaw/components/macho-fly.dart';
+import 'package:langaw/components/score-display.dart';
 import 'package:langaw/components/start-button.dart';
 import 'package:langaw/controllers/spawner.dart';
 import 'package:langaw/view.dart';
@@ -19,17 +21,23 @@ import 'package:langaw/views/credits-view.dart';
 import 'package:langaw/views/help-view.dart';
 import 'package:langaw/views/home-view.dart';
 import 'package:langaw/views/lost-view.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LangawGame extends Game {
+  final SharedPreferences storage;
+
   Size screenSize;
   double tileSize;
   Random rnd;
+  int score;
 
   Backyard background;
   List<Fly> flies;
   StartButton startButton;
   HelpButton helpButton;
   CreditsButton creditsButton;
+  ScoreDisplay scoreDisplay;
+  HighscoreDisplay highscoreDisplay;
 
   FlySpawner spawner;
 
@@ -39,11 +47,12 @@ class LangawGame extends Game {
   HelpView helpView;
   CreditsView creditsView;
 
-  LangawGame() {
+  LangawGame(this.storage) {
     initialize();
   }
 
   void initialize() async {
+    score = 0;
     rnd = Random();
     flies = List<Fly>();
     resize(await Flame.util.initialDimensions());
@@ -52,6 +61,8 @@ class LangawGame extends Game {
     startButton = StartButton(this);
     helpButton = HelpButton(this);
     creditsButton = CreditsButton(this);
+    scoreDisplay = ScoreDisplay(this);
+    highscoreDisplay = HighscoreDisplay(this);
 
     spawner = FlySpawner(this);
     homeView = HomeView(this);
@@ -86,6 +97,9 @@ class LangawGame extends Game {
   void render(Canvas canvas) {
     background.render(canvas);
 
+    highscoreDisplay.render(canvas);
+    if (activeView == View.playing) scoreDisplay.render(canvas);
+
     flies.forEach((Fly fly) => fly.render(canvas));
 
     if (activeView == View.home) homeView.render(canvas);
@@ -103,6 +117,8 @@ class LangawGame extends Game {
     spawner.update(t);
     flies.forEach((Fly fly) => fly.update(t));
     flies.removeWhere((Fly fly) => fly.isOffscreen);
+
+    if (activeView == View.playing) scoreDisplay.update(t);
   }
 
   void resize(Size size) {
